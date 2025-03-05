@@ -12,5 +12,5 @@
 # limitations under the License.
 #
 # [START runtime]
-runtime: nodejs10
+runtime: nodejs22
 # [END runtime]
