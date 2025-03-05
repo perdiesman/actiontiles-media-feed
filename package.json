@@ -9,9 +9,9 @@
   "author": "Mitchell Broxson",
   "license": "ISC",
   "dependencies": {
-    "express": "^4.17.1",
-    "gifencoder": "^2.0.1",
-    "underscore": "^1.9.1",
-    "xml2js": "^0.4.19"
+    "express": ">=4.17.1",
+    "gifencoder": ">=2.0.1",
+    "underscore": ">=1.9.1",
+    "xml2js": ">=0.4.19"
   }
 }
