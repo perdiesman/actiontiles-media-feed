@@ -1,8 +1,9 @@
 const https = require('https')
 const { parseString } = require('xml2js')
 const _ = require("underscore")
-const GIFEncoder = require('gifencoder')
 const { createCanvas } = require('canvas')
+const { GifFrame, GifCodec, BitmapImage } = require('gifwrap')
+const { Jimp } = require('jimp')
 
 const traktHost = 'trakt.tv'
 const tvRssUrl = '/calendars/my/shows.atom?slurm=d42fdbd5e85ab6ee860fdc3c5e361ce4'
@@ -39,7 +40,10 @@ function getXml(url, callback) {
         hostname: traktHost,
         port: 443,
         path: url,
-        method: 'GET'
+        method: 'GET',
+		headers: {
+			'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36'
+		}
     }
 
     let req = https.request(options, (res) => {
@@ -71,10 +75,10 @@ function addMovieText(ctx, entry, top) {
     ctx.fillText(entry.title, 20, top + 120)
 }
 
-module.exports.tv = (req, res) => {
+module.exports.tv = async (req, res) => {
     res.type('gif')
-    getXml(tvRssUrl, (data) => {
-        parseString(data, (err, xmlResult) => {
+    getXml(tvRssUrl, async (data) => {
+        parseString(data, async (err, xmlResult) => {
             if (err) throw err
             let weekResults = []
             let nextWeek = new Date((new Date()).getTime() + 7 * 24 * 60 * 60 * 1000)
@@ -93,12 +97,7 @@ module.exports.tv = (req, res) => {
                 }
             })
 
-            let encoder = new GIFEncoder(1200, 1200)
-            encoder.createReadStream().pipe(res)
-            encoder.start()
-            encoder.setRepeat(0)
-            encoder.setDelay(3500)
-
+            const frames = []
             for (let r = 0;r < weekResults.length;r++) {
                 let canvas = createCanvas(1200, 1200)
                 let ctx = canvas.getContext('2d')
@@ -127,18 +126,21 @@ module.exports.tv = (req, res) => {
                 r++
                 if (r < weekResults.length)
                     addTvText(ctx, weekResults[r], 980)
-                encoder.addFrame(ctx)
+                frames.push(new GifFrame(new BitmapImage(await Jimp.fromBitmap(ctx.getImageData(0, 0, canvas.width, canvas.height)).bitmap), { delayCentisecs: 350 }))
             }
+			
+			const codec = new GifCodec();
+			const gif = await codec.encodeGif(frames);
             
-            encoder.finish()
+            res.write(gif.buffer)
         })
     })
 }
 
-module.exports.movie = (req, res) => {
+module.exports.movie = async (req, res) => {
     res.type('gif')
-    getXml(movieRssUrl, (data) => {
-        parseString(data, (err, xmlResult) => {
+    getXml(movieRssUrl, async (data) => {
+        parseString(data, async (err, xmlResult) => {
             if (err) throw err
             _.each(xmlResult.feed.entry, (entry) => {
                 entry.date = new Date(entry.published[0])
@@ -147,12 +149,7 @@ module.exports.movie = (req, res) => {
                 entry.year = entry.date.getFullYear()
             })
 
-            let encoder = new GIFEncoder(1200, 800)
-            encoder.createReadStream().pipe(res)
-            encoder.start()
-            encoder.setRepeat(0)
-            encoder.setDelay(3500)
-
+			const frames = []
             for (let r = 0;r < xmlResult.feed.entry.length && r < 5;r++) {
                 let canvas = createCanvas(1200, 800)
                 let ctx = canvas.getContext('2d')
@@ -175,10 +172,13 @@ module.exports.movie = (req, res) => {
                 r++
                 if (r < xmlResult.feed.entry.length)
                     addMovieText(ctx, xmlResult.feed.entry[r], 660)
-                encoder.addFrame(ctx)
+                frames.push(new GifFrame(new BitmapImage(await Jimp.fromBitmap(ctx.getImageData(0, 0, canvas.width, canvas.height)).bitmap), { delayCentisecs: 350 }))
             }
             
-            encoder.finish()
+            const codec = new GifCodec();
+			const gif = await codec.encodeGif(frames);
+            
+            res.write(gif.buffer)
         })
     })
 }
