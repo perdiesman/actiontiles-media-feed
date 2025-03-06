@@ -1,6 +1,6 @@
 {
   "name": "actiontiles-media-feed",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "ActionTiles media creator",
   "main": "server.js",
   "scripts": {
@@ -9,9 +9,11 @@
   "author": "Mitchell Broxson",
   "license": "ISC",
   "dependencies": {
-    "express": ">=4.17.1",
-    "gifencoder": ">=2.0.1",
-    "underscore": ">=1.9.1",
-    "xml2js": ">=0.4.19"
+    "canvas": "^3.1.0",
+    "express": "^4.21.2",
+    "gifwrap": "^0.10.1",
+    "jimp": "^1.6.0",
+    "underscore": "^1.13.7",
+    "xml2js": "^0.4.23"
   }
 }
